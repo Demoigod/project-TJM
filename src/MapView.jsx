@@ -13,7 +13,6 @@ const supabase = createClient(
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 function MapView() {
-  console.log('URL:', import.meta.env.VITE_SUPABASE_URL)
   const mapContainer = useRef(null)
   const mapRef = useRef(null)
   const stopsRef = useRef([])
@@ -31,7 +30,7 @@ function MapView() {
     map.on('load', async () => {
       const { data, error } = await supabase
         .from('stops')
-        .select('name, longitude, latitude, story')
+        .select('name, longitude, latitude, story, attractions')
         .order('id', { ascending: true })
 
       if (error) {
@@ -43,6 +42,7 @@ function MapView() {
         name: row.name,
         coord: [row.longitude, row.latitude],
         story: row.story,
+        attractions: row.attractions,
       }))
       stopsRef.current = stops
 
@@ -71,8 +71,14 @@ function MapView() {
       // markers
       stops.forEach((s) => {
         const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
-          `<strong style="color:#065A82">${s.name}</strong><br>${s.story}`
-        )
+      `<strong style="color:#065A82;font-size:15px">${s.name}</strong>
+      <p style="margin:6px 0;font-size:13px">${s.story}</p>
+      <strong style="font-size:12px;color:#1C7293">Don't miss:</strong>
+      <ul style="margin:4px 0 0;padding-left:18px;font-size:12px">
+      ${(s.attractions || '').split(';').map(a => `<li>${a.trim()}</li>`).join('')}
+   </ul>`
+)
+
         const marker = new mapboxgl.Marker({ color: '#065A82' })
           .setLngLat(s.coord)
           .setPopup(popup)
